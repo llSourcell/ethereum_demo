@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Conference DApp</title>
+  <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700,300' rel='stylesheet' type='text/css'>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+    }
+    .section {
+      margin: 20px;
+    }
+    button {
+      padding: 5px 16px;
+      border-radius: 4px;
+    }
+    button#changeQuota { background-color: yellow; }
+    button#buyTicket { background-color: #98fb98; }
+    button#refundTicket { background-color: pink; }
+    button#createWallet { background-color: #add8e6; }
+    #seed {color: green;}
+
+  </style>
+  <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+  <script src="./app.js"></script>
+</head>
+<body>
+  <h1>Conference DApp</h1>
+  <div class="section">
+    Contract deployed at: <div id="confAddress"></div>
+  </div>
+  <div class="section">
+    Organizer: <input type="text" id="confOrganizer" />
+  </div>
+  <div class="section">
+    Quota: <input type="text" id="confQuota" />
+      <button id="changeQuota">Change</button>
+      <span id="changeQuotaResult"></span>
+  </div>
+  <div class="section">
+    Registrants: <span id="numRegistrants">0</span>
+  </div>
+
+  <hr/>
+  
+  <div class="section">
+    <h2>Buy a Ticket</h2>
+    Ticket Price: <input type="text" id="ticketPrice" value="0.05" /> 
+      Buyer Address: <input type="text" id="buyerAddress" />
+      <button id="buyTicket">Buy Ticket</button>
+      <span id="buyTicketResult"></span>
+  </div>
+
+  <hr/>
+
+  <div class="section">
+    <h2>Refund a Ticket</h2>
+    Ticket Price: <input type="text" id="ticketPrice" value="0.05" /> 
+      Buyer Address: <input type="text" id="refBuyerAddress" />
+      <button id="refundTicket">Refund Ticket</button>
+      <span id="refundTicketResult"></span>
+  </div>
+
+  <hr/>
+  
+  <div class="section">
+    <h2>Create a Wallet</h2>
+    Password: <input type="text" id="password" />
+      <button id="createWallet">Create Wallet</button>
+      <button id="fundWallet">Fund Wallet with 1 ETH</button> 
+
+      <br/><br/>
+      Your Wallet Secret Seed: <span id="seed"></span>
+      <br/><br/>
+      Your New Wallet Address: <span id="wallet"></span>
+      <br/><br/>
+      Your New Wallet Private Key: <span id="privateKey"></span>
+      <br/><br/>
+      Wallet Balance: <span id="balance"></span>
+      <br/><br/>
+      <button id="checkBalance">Check Balance</button> 
+  </div>
+
+</body>
+</html> 
