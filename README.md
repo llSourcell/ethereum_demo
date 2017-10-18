@@ -21,7 +21,7 @@ $ npm install -g ethereumjs-testrpc
 Install [truffle](https://github.com/consensys/truffle):
 
 ```
-$ npm install -g truffle 
+$ npm install -g truffle@2.0.4
 ```
 
 If you don't have solc you can get it [here](https://github.com/ethereum/go-ethereum/wiki/Contract-Tutorial#using-an-online-compiler)
