@@ -1,15 +1,33 @@
-var accounts, account;
-var myConferenceInstance;
+let accounts;
+let account;
+let myConferenceInstance;
+
+// Import libraries we need.
+import { default as Web3} from 'web3';
+import { default as contract } from 'truffle-contract';
+// Import our contract artifacts and turn them into usable abstractions.
+import contract_artifacts from '../../build/contracts/Conference.json'
+
+// MetaCoin is our usable abstraction, which we'll use through the code below.
+const Conference = contract(contract_artifacts);
+
 
 // Initialize
 function initializeConference() {
-	Conference.new({from: accounts[0], gas: 3141592}).then(
+
+  Conference.setProvider(web3.currentProvider);
+  Conference.new({from: accounts[0], gas: 3141592}).then(
 	function(conf) {
 		console.log(conf);
 		myConferenceInstance = conf;
 		$("#confAddress").html(myConferenceInstance.address);
 		checkValues();
 	});
+
+
+  // Set value of wallet to accounts[1]
+  $("#buyerAddress").val(accounts && accounts[1]);
+  $("#refBuyerAddress").val(accounts && accounts[1]);
 }
 
 // Check Values
@@ -43,7 +61,10 @@ function changeQuota(val) {
 				msgResult = "Change failed";
 			}
 			$("#changeQuotaResult").html(msgResult);
-		});
+		}).catch(function(err) {
+		var  msgResult = "Change failed";
+		$("#changeQuotaResult").html(msgResult);
+  });
 }
 
 // buyTicket
@@ -65,76 +86,10 @@ function buyTicket(buyerAddress, ticketPrice) {
 				msgResult = "Purchase failed";
 			}
 			$("#buyTicketResult").html(msgResult);
-		});
-}
-
-// refundTicket
-function refundTicket(buyerAddress, ticketPrice) {
-
-		var msgResult;
-
-		myConferenceInstance.registrantsPaid.call(buyerAddress).then(
-		function(result) {
-			if (result.toNumber() == 0) {
-				$("#refundTicketResult").html("Buyer is not registered - no refund!");
-			} else {		
-				myConferenceInstance.refundTicket(buyerAddress, 
-					ticketPrice, {from: accounts[0]}).then(
-					function() {
-						return myConferenceInstance.numRegistrants.call();
-					}).then(
-					function(num) {
-						$("#numRegistrants").html(num.toNumber());
-						return myConferenceInstance.registrantsPaid.call(buyerAddress);
-					}).then(
-					function(valuePaid) {
-						if (valuePaid.toNumber() == 0) {
-							msgResult = "Refund successful";
-						} else {
-							msgResult = "Refund failed";
-						}
-						$("#refundTicketResult").html(msgResult);
-					});	
-			}
-		});
-}
-
-// createWallet
-function createWallet(password) {
-
-	var msgResult;
-
-	var secretSeed = lightwallet.keystore.generateRandomSeed();
-
-	$("#seed").html(secretSeed);
-
-	lightwallet.keystore.deriveKeyFromPassword(password, function (err, pwDerivedKey) {
-
-		console.log("createWallet");
-
-		var keystore = new lightwallet.keystore(secretSeed, pwDerivedKey);
-
-		// generate one new address/private key pairs
-		// the corresponding private keys are also encrypted
-		keystore.generateNewAddress(pwDerivedKey);
-
-		var address = keystore.getAddresses()[0];
-
-		var privateKey = keystore.exportPrivateKey(address, pwDerivedKey);
-
-		console.log(address);
-
-		$("#wallet").html("0x"+address);
-		$("#privateKey").html(privateKey);
-		$("#balance").html(getBalance(address));
-
-
-		// Now set ks as transaction_signer in the hooked web3 provider
-		// and you can start using web3 using the keys/addresses in ks!
-
-		switchToHooked3(keystore);
-
-	});
+		}).catch(function(err) {
+		  var  msgResult = "Purchase failed";
+		  $("#buyTicketResult").html(msgResult);
+    });
 }
 
 function getBalance(address) {
@@ -149,7 +104,6 @@ function switchToHooked3(_keystore) {
 
 	var web3Provider = new HookedWeb3Provider({
 	  host: "http://localhost:8545", // check what using in truffle.js
-	  transaction_signer: _keystore
 	});
 
 	web3.setProvider(web3Provider);
@@ -174,6 +128,16 @@ function fundEth(newAddress, amt) {
 
 window.onload = function() {
 
+	  if (typeof web3 !== 'undefined') {
+		console.warn("Using web3 detected from external source. If you find that your accounts don't appear or you have 0 MetaCoin, ensure you've configured that source properly. If using MetaMask, see the following link. Feel free to delete this warning. :) http://truffleframework.com/tutorials/truffle-and-metamask")
+		// Use Mist/MetaMask's provider
+		window.web3 = new Web3(web3.currentProvider);
+	  } else {
+		console.warn("No web3 detected. Falling back to http://localhost:8545. You should remove this fallback when you deploy live, as it's inherently insecure. Consider switching to Metamask for development. More info here: http://truffleframework.com/tutorials/truffle-and-metamask");
+		// fallback - use your fallback strategy (local node / hosted node + in-dapp id mgmt / fail)
+		window.web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
+	  }
+
 	web3.eth.getAccounts(function(err, accs) {
     if (err != null) {
       alert("There was an error fetching your accounts.");
@@ -183,6 +147,10 @@ window.onload = function() {
       alert("Couldn't get any accounts! Make sure your Ethereum client is configured correctly.");
       return;
     }
+  if (accs.length < 2) {
+	alert("Couldn't get buyer accounts! Make sure your Ethereum client is configured correctly.");
+	return;
+  }
     accounts = accs;
     account = accounts[0];
 
@@ -201,36 +169,5 @@ window.onload = function() {
 		buyTicket(buyerAddress, web3.toWei(val));
 	});
 
-	$("#refundTicket").click(function() {
-		var val = $("#ticketPrice").val();
-		var buyerAddress = $("#refBuyerAddress").val();
-		refundTicket(buyerAddress, web3.toWei(val));
-	});
-
-	$("#createWallet").click(function() {
-		var val = $("#password").val();
-		if (!val) {
-			$("#password").val("PASSWORD NEEDED").css("color", "red");
-			$("#password").click(function() { 
-				$("#password").val("").css("color", "black"); 
-			});
-		} else {
-			createWallet(val);
-		}
-	});
-
-	$("#fundWallet").click(function() {
-		var address = $("#wallet").html();
-		fundEth(address, 1);
-	});
-
-	$("#checkBalance").click(function() {
-		var address = $("#wallet").html();
-		$("#balance").html(getBalance(address));
-	});
-
-	// Set value of wallet to accounts[1]
-	$("#buyerAddress").val(accounts[1]);
-	$("#refBuyerAddress").val(accounts[1]);
 
 };
